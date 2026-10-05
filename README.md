@@ -20,7 +20,7 @@ npm start            # http://localhost:5173
 
 Zero npm dependencies. Any Ollama vision model works; change it in *Settings* (`gemma3:12b`, `gemma3n`, `llava`, …).
 
-**Phone in the field, PC at home:** open the app on your phone (HTTPS host such as GitHub Pages, or any LAN/HTTPS setup), shoot your roll, tap *Export roll*, then *Import roll* on the PC running Ollama and develop it there. If no model is reachable when you load film, the app falls back to a built-in pocket deck of quests.
+**Phone in the field, PC at home:** open the app on your phone (HTTPS host such as GitHub Pages, or any LAN/HTTPS setup), shoot your roll, tap *Export roll*, then *Import roll* on the PC running Ollama and develop it there. Developing from the hosted page instead of `npm start`? Allow its origin in Ollama: `OLLAMA_ORIGINS=https://angelraph.github.io`. If no model is reachable when you load film, the app falls back to a built-in pocket deck of quests.
 
 ## Why open models
 
