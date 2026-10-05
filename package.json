@@ -1,0 +1,8 @@
+{
+  "name": "touch-grass-not-glass",
+  "version": "1.0.0",
+  "description": "A camera that only works outside. Open-weight Gemma develops your roll locally.",
+  "type": "module",
+  "scripts": { "start": "node serve.mjs" },
+  "license": "MIT"
+}

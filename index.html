@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0b09">
+  <meta name="description" content="A camera that only works outside. Open-weight AI loads a roll of field quests, the screen goes dark, and Gemma develops your roll at home, on your own machine.">
+  <title>Touch Grass, Not Glass</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- HOME -->
+  <section id="home" class="view">
+    <header class="masthead">
+      <p class="kicker">a camera that only works outside</p>
+      <h1>Touch Grass,<br><em>Not Glass</em></h1>
+    </header>
+
+    <div class="card">
+      <h2>Load a roll</h2>
+      <p class="muted">Gemma writes you six field quests for today's season and light. Then put the phone in your pocket.</p>
+      <label>Where are you heading?
+        <select id="place">
+          <option value="a city park">City park</option>
+          <option value="a forest trail">Forest trail</option>
+          <option value="a backyard or garden">Backyard / garden</option>
+          <option value="city streets">City streets</option>
+          <option value="a beach or riverbank">Beach / riverbank</option>
+        </select>
+      </label>
+      <button id="loadRoll" class="primary">Load film</button>
+      <p id="loadStatus" class="status" aria-live="polite"></p>
+    </div>
+
+    <div class="card">
+      <h2>Darkroom</h2>
+      <p class="muted">Rolls you've shot wait here until Gemma develops them on this machine.</p>
+      <ul id="rolls" class="rolls"></ul>
+      <div class="row">
+        <label class="btn ghost">Import roll<input id="importRoll" type="file" accept=".json,application/json" hidden></label>
+      </div>
+    </div>
+
+    <details class="card">
+      <summary>Settings</summary>
+      <label>Ollama URL <input id="ollamaUrl" type="url"></label>
+      <label>Model <input id="model" type="text"></label>
+      <p class="muted small">Any open-weight vision model in Ollama works: <code>gemma3:4b</code>, <code>gemma3:12b</code>, <code>gemma3n</code>, <code>llava</code>… Swap it, fine-tune it, it's yours.</p>
+      <p id="ollamaHealth" class="status"></p>
+    </details>
+
+    <footer class="foot muted small">Photos and location never leave your devices. No accounts, no cloud, no streaks.</footer>
+  </section>
+
+  <!-- FIELD -->
+  <section id="field" class="view field" hidden>
+    <p class="frame-count"><span id="frameNo">1</span> / <span id="frameTotal">6</span></p>
+    <p id="questText" class="quest"></p>
+    <p class="hint">Look up. Find it. Then shoot.</p>
+    <div class="field-actions">
+      <label class="shutter" aria-label="Take photo">
+        <input id="shutter" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <button id="skip" class="ghost small">skip</button>
+    </div>
+    <button id="endRoll" class="ghost small end">finish roll</button>
+  </section>
+
+  <!-- DEVELOP / JOURNAL -->
+  <section id="journal" class="view" hidden>
+    <button id="back" class="ghost small">← home</button>
+    <header class="masthead small-mast">
+      <p class="kicker" id="rollMeta"></p>
+      <h1 id="rollTitle">Field journal</h1>
+      <p id="glassStat" class="glass-stat"></p>
+    </header>
+    <div class="row">
+      <button id="develop" class="primary">Develop roll</button>
+      <button id="exportRoll" class="ghost">Export roll</button>
+    </div>
+    <p id="devStatus" class="status" aria-live="polite"></p>
+    <ol id="specimens" class="specimens"></ol>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
