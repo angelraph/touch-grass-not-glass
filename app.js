@@ -282,6 +282,7 @@ $('develop').onclick = async () => {
   for (const [n, [shot, i]] of todo.entries()) {
     const li = document.querySelector(`.specimen[data-i="${i}"]`);
     li?.classList.add('developing');
+    li?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     status.textContent = `Developing frame ${n + 1} of ${todo.length} with ${settings.model}, locally. On a laptop CPU that's a couple of minutes a frame: put the kettle on.`;
     try {
       shot.verdict = await ollama.develop(settings.url, settings.model, shot.quest, shot.image.split(',')[1]);

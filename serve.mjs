@@ -11,8 +11,9 @@ const types = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/cs
 createServer(async (req, res) => {
   const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^[\\/]+/, '');
   try {
-    const body = await readFile(join(root, path || 'index.html'));
-    res.writeHead(200, { 'Content-Type': types[extname(path || '.html')] || 'application/octet-stream' });
+    const file = path || 'index.html';
+    const body = await readFile(join(root, file));
+    res.writeHead(200, { 'Content-Type': types[extname(file)] || 'application/octet-stream' });
     res.end(body);
   } catch {
     res.writeHead(404).end('not found');
