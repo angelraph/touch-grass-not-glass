@@ -23,6 +23,10 @@ body { min-height: 100dvh; }
 .small-mast h1 { font-size: 2rem; }
 .kicker { text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; color: var(--muted); margin: 0; font-family: ui-monospace, Consolas, monospace; }
 
+.how { counter-reset: step; list-style: none; padding: 0; margin: 0 0 8px; display: grid; gap: 10px; }
+.how li { counter-increment: step; display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; line-height: 1.4; }
+.how li::before { content: counter(step); width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--moss); color: var(--moss); display: grid; place-items: center; font-size: .85rem; }
+.how b { font-weight: 600; }
 .card { background: var(--paper-2); border: 1px solid var(--line); border-radius: 4px; padding: 18px; margin: 16px 0; }
 .card h2 { margin: 0 0 6px; font-weight: 400; font-size: 1.3rem; }
 details.card summary { cursor: pointer; font-size: 1.1rem; }
