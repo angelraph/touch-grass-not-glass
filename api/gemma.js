@@ -33,7 +33,7 @@ async function gemma(parts, maxTokens) {
     });
     // Ask for JSON only; Gemma 4 thinks before it answers, so leave room for that.
     const base = { temperature: 0.8, responseMimeType: 'application/json' };
-    let res = await call({ ...base, maxOutputTokens: maxTokens + 2000, thinkingConfig: { thinkingBudget: 1024 } });
+    let res = await call({ ...base, maxOutputTokens: maxTokens + 2000, thinkingConfig: { thinkingLevel: 'minimal' } });
     if (res.status === 400) res = await call({ ...base, maxOutputTokens: maxTokens + 8000 });
     if (res.status === 400) res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 8000 });
     if (res.status === 429) { const e = new Error('busy'); e.status = 429; throw e; }
@@ -62,21 +62,6 @@ export default async function handler(req, res) {
     const models = (data.models || []).map(m => ({ name: m.name.replace('models/', ''), methods: m.supportedGenerationMethods }))
       .filter(m => /gemma/i.test(m.name));
     return res.status(200).json({ models, error: data.error?.message });
-  }
-  if (req.method === 'GET' && configured && /[?&]probe=1/.test(req.url || '')) {
-    // Which thinking settings does the hosted model accept, and how fast is each? (diagnostic)
-    const variants = { budget0: { thinkingConfig: { thinkingBudget: 0 } }, budget256: { thinkingConfig: { thinkingBudget: 256 } }, levelLow: { thinkingConfig: { thinkingLevel: 'low' } }, levelMinimal: { thinkingConfig: { thinkingLevel: 'minimal' } } };
-    const out = {};
-    for (const [name, extra] of Object.entries(variants)) {
-      const t = Date.now();
-      const r = await fetch(`${API}/${MODELS[0].trim()}:generateContent`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMMA_API_KEY },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Reply with only {"ok": true}' }] }], generationConfig: { maxOutputTokens: 2000, responseMimeType: 'application/json', ...extra } }),
-      });
-      const d = await r.json().catch(() => ({}));
-      out[name] = { status: r.status, ms: Date.now() - t, thoughts: d.usageMetadata?.thoughtsTokenCount, error: d.error?.message?.slice(0, 120) };
-    }
-    return res.status(200).json(out);
   }
   if (req.method === 'GET') return res.status(200).json({ configured, model: MODELS[0] });
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
