@@ -26,17 +26,25 @@ function firstJson(text) {
 async function gemma(parts, maxTokens) {
   let last;
   for (const model of MODELS) {
-    const res = await fetch(`${API}/${model.trim()}:generateContent`, {
+    const call = config => fetch(`${API}/${model.trim()}:generateContent`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMMA_API_KEY },
-      body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.8, maxOutputTokens: maxTokens } }),
+      body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: config }),
     });
+    // Ask for JSON only; Gemma 4 thinks before it answers, so leave room for that.
+    let res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 3000, responseMimeType: 'application/json' });
+    if (res.status === 400) res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 3000 });
     if (res.status === 429) { const e = new Error('busy'); e.status = 429; throw e; }
     if (res.status === 404) { last = new Error(`${model} not available`); continue; }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || `Gemma answered ${res.status}`);
-    const text = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
-    return { json: firstJson(text), model: model.trim() };
+    // Skip the model's thinking parts; the answer is in the remaining text.
+    const answer = (data.candidates?.[0]?.content?.parts || []).filter(p => !p.thought).map(p => p.text || '').join('');
+    try {
+      return { json: firstJson(answer), model: model.trim() };
+    } catch {
+      throw new Error(`unreadable reply: ${answer.slice(-200)}`);
+    }
   }
   throw last || new Error('no Gemma model available');
 }
