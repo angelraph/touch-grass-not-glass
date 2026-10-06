@@ -5,20 +5,27 @@ const $ = id => document.getElementById(id);
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 // Used when no model is reachable (e.g. loading a roll on a phone on the trail).
-const POCKET_DECK = [
-  'Find a leaf that something has already taken a bite out of.',
-  'Photograph the oldest-looking bark you can find.',
-  'Find a place where light comes through something green.',
-  'Find a sign that an animal passed here today.',
-  'Photograph a seed, cone, nut, or berry still on its plant.',
-  'Find something growing where nobody planted it.',
-  'Photograph the sky through a gap in branches.',
-  'Find a color in nature you could not name.',
-  'Find a spider web, a nest, or any home that is not human.',
-  'Photograph moss, lichen, or something softer than it looks.',
-  'Find water doing something: dripping, pooling, reflecting.',
-  'Find the smallest flower you can.',
-];
+// Easy quests that exist almost anywhere, plus a few that fit the chosen place.
+const POCKET_DECK = {
+  any: [
+    'Find a plant growing somewhere nobody planted it.',
+    'Photograph the sky with at least one cloud in it.',
+    'Find a leaf with a hole or a bite in it.',
+    'Photograph your own shadow on the ground.',
+    'Find something green that is smaller than your thumb.',
+    'Photograph a bird, or any place a bird might sit.',
+    'Find a tree and photograph its bark up close.',
+    'Find a flower of any size or colour.',
+    'Photograph something the wind is moving.',
+    'Find an insect, a spider web, or an ant trail.',
+  ],
+  'city streets': ['Find a weed growing in a crack in the pavement.', 'Photograph a tree that grows beside a road.', 'Find a plant in a pot, a window or a balcony.'],
+  'a backyard or garden': ['Find a seed, a pod or a fruit still on its plant.', 'Photograph soil that is wet or freshly dug.', 'Find a leaf bigger than your hand.'],
+  'a city park': ['Find the oldest-looking tree in the park.', 'Photograph grass from very close, at ground level.', 'Find a fallen leaf, flower or twig on the path.'],
+  'a forest trail': ['Find moss, lichen or a mushroom.', 'Photograph light coming through the leaves.', 'Find a fallen branch or log.'],
+  'a beach or riverbank': ['Find water doing something: moving, dripping or reflecting.', 'Photograph a smooth stone or a shell.', 'Find a plant growing right at the water’s edge.'],
+};
+const pocketQuests = place => shuffle([...shuffle(POCKET_DECK[place] || []).slice(0, 2), ...shuffle(POCKET_DECK.any).slice(0, 4)]);
 
 const settings = {
   get url() { return localStorage.getItem('ollamaUrl') || 'http://localhost:11434'; },
@@ -111,7 +118,7 @@ $('loadRoll').onclick = async () => {
     author = settings.model;
   } catch (e) {
     if (e.message !== 'no model') console.warn('Quest model unavailable, using pocket deck', e);
-    quests = shuffle(POCKET_DECK).slice(0, 6);
+    quests = pocketQuests(place);
     author = 'the pocket deck';
   }
   roll = {
