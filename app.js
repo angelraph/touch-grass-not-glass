@@ -19,13 +19,29 @@ const POCKET_DECK = {
     'Photograph something the wind is moving.',
     'Find an insect, a spider web, or an ant trail.',
   ],
-  'city streets': ['Find a weed growing in a crack in the pavement.', 'Photograph a tree that grows beside a road.', 'Find a plant in a pot, a window or a balcony.'],
+  // Houses, a road and a few trees: everything here should be findable on an ordinary street.
+  'city streets': [
+    'Find a weed growing in a crack in the pavement or a wall.',
+    'Photograph one of the trees on your street, from the roots up.',
+    'Photograph a leaf from a street tree, up close.',
+    'Find a plant in a pot, a window, a gate or a balcony.',
+    'Photograph the sky above the rooftops.',
+    'Photograph your own shadow on the road or a wall.',
+    'Find a bird, or a wire, roof or branch where birds sit.',
+    'Find something green growing on a wall, a fence or a roof.',
+    'Find a flower in a yard or by the side of the road.',
+    'Find a fallen leaf lying on the road or the pavement.',
+    'Photograph sunlight landing on a wall or the ground.',
+    'Find an ant, a fly, a butterfly or any small creature.',
+  ],
   'a backyard or garden': ['Find a seed, a pod or a fruit still on its plant.', 'Photograph soil that is wet or freshly dug.', 'Find a leaf bigger than your hand.'],
   'a city park': ['Find the oldest-looking tree in the park.', 'Photograph grass from very close, at ground level.', 'Find a fallen leaf, flower or twig on the path.'],
   'a forest trail': ['Find moss, lichen or a mushroom.', 'Photograph light coming through the leaves.', 'Find a fallen branch or log.'],
   'a beach or riverbank': ['Find water doing something: moving, dripping or reflecting.', 'Photograph a smooth stone or a shell.', 'Find a plant growing right at the water’s edge.'],
 };
-const pocketQuests = place => shuffle([...shuffle(POCKET_DECK[place] || []).slice(0, 2), ...shuffle(POCKET_DECK.any).slice(0, 4)]);
+const pocketQuests = place => place === 'city streets'
+  ? shuffle(POCKET_DECK[place]).slice(0, 6)
+  : shuffle([...shuffle(POCKET_DECK[place] || []).slice(0, 2), ...shuffle(POCKET_DECK.any).slice(0, 4)]);
 
 const settings = {
   get url() { return localStorage.getItem('ollamaUrl') || 'http://localhost:11434'; },
