@@ -4,7 +4,7 @@
 import { questPrompt, developPrompt } from '../prompts.js';
 
 const API = 'https://generativelanguage.googleapis.com/v1beta/models';
-const MODELS = (process.env.GEMMA_MODEL || 'gemma-3-4b-it,gemma-3-12b-it,gemma-3-27b-it').split(',');
+const MODELS = (process.env.GEMMA_MODEL || 'gemma-4-26b-a4b-it,gemma-4-31b-it,gemma-3-4b-it').split(',');
 const MAX_IMAGE = 1_500_000; // base64 chars, about 1.1 MB: the app sends 768px JPEGs
 const WINDOW_MS = 10 * 60 * 1000, PER_WINDOW = 30;
 const hits = new Map(); // best-effort per-IP limit (per warm instance)
