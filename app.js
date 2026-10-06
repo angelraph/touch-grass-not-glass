@@ -312,7 +312,7 @@ async function renderJournal(focusId) {
       <div class="roll-actions">
         ${!r.endedAt ? '<button class="btn btn-primary" data-act="resume">Resume walk</button>' : ''}
         ${r.sample ? '<button class="btn btn-primary" data-act="replay">Replay development</button>' : ''}
-        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}${darkroom === 'online' ? ' online' : ''}</button><button class="btn btn-ghost" data-act="peek">Show photos</button>` : ''}
+        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}${darkroom === 'online' ? ' online' : ''}</button>` : ''}
         <button class="btn btn-ghost" data-act="export">Export</button>
         <button class="del" data-act="delete" aria-label="Delete roll">Delete</button>
       </div>
@@ -338,7 +338,6 @@ $('rollList').addEventListener('click', async e => {
   if (act === 'export') exportRoll(r);
   if (act === 'delete' && confirm('Delete this roll and its photos?')) { await deleteRoll(r.id); renderJournal(); }
   if (act === 'develop') develop(r, section, btn);
-  if (act === 'peek') { const on = section.classList.toggle('peek'); btn.textContent = on ? 'Hide photos' : 'Show photos'; }
   if (act === 'replay') replay(r, section, btn);
 });
 
@@ -346,7 +345,7 @@ async function develop(r, section, btn) {
   const status = section.querySelector('[data-status]');
   const where = await checkHealth();
   if (!where) {
-    status.textContent = 'No darkroom reachable right now. Tap Show photos to see them, or develop later on a computer running Ollama (see Docs).';
+    status.textContent = 'No darkroom reachable right now. Your photos are safe on this phone, still undeveloped. Try again when you are back online.';
     return;
   }
   btn.disabled = true;
