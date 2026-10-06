@@ -1,9 +1,9 @@
 // Cache the app shell so field mode works with zero signal.
-const CACHE = 'touch-grass-v3';
+const CACHE = 'touch-grass-v4';
 const SHELL = [
-  './', 'index.html', 'app.html', 'docs.html', 'app.js', 'ollama.js', 'store.js', 'manifest.webmanifest', 'icon.svg',
+  './', 'index.html', 'app.html', 'docs.html', 'app.js', 'ollama.js', 'store.js', 'manifest.webmanifest',
   'assets/base.css', 'assets/app.css', 'assets/site.css', 'assets/site.js',
-  'assets/fonts/fraunces.woff2', 'assets/fonts/fraunces-italic.woff2', 'assets/fonts/inter.woff2',
+  'assets/mark-96.png', 'assets/icon-192.png', 'assets/fonts/fraunces.woff2', 'assets/fonts/fraunces-italic.woff2', 'assets/fonts/inter.woff2',
 ];
 
 self.addEventListener('install', e => {

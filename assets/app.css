@@ -110,3 +110,4 @@ body.quiet { background: var(--night); color: #d9d3c2; }
 .setting-group input { display: block; width: 100%; margin-top: 6px; padding: 12px 14px; font: 400 .95rem/1.2 var(--sans); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; }
 .help { font-size: .84rem; color: var(--muted); margin: 0 0 12px; }
 code { font: .86em ui-monospace, Consolas, monospace; background: var(--paper-2); padding: 1px 5px; border-radius: 5px; }
+.logo img { border-radius: 9px; }
