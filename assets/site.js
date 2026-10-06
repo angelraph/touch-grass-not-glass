@@ -61,7 +61,7 @@ const io = new IntersectionObserver(entries => entries.forEach(e => {
   if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
 }), { rootMargin: '0px 0px -12% 0px' });
 const watch = el => { if (!el.classList.contains('chapter') && !el.classList.contains('specimen-card')) el.classList.add('reveal'); io.observe(el); };
-document.querySelectorAll('.chapter, .section-head, .why-list li, .faq-list, .honest, .final-cta h2').forEach(watch);
+document.querySelectorAll('.chapter, .section-head, .film-frame, .why-list li, .faq-list, .honest, .final-cta h2').forEach(watch);
 
 // ---------- sample roll: three real Gemma frames ----------
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);

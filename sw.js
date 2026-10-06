@@ -1,5 +1,5 @@
 // Cache the app shell so field mode works with zero signal.
-const CACHE = 'touch-grass-v4';
+const CACHE = 'touch-grass-v5';
 const SHELL = [
   './', 'index.html', 'app.html', 'docs.html', 'app.js', 'ollama.js', 'store.js', 'manifest.webmanifest',
   'assets/base.css', 'assets/app.css', 'assets/site.css', 'assets/site.js',
@@ -17,7 +17,7 @@ self.addEventListener('activate', e => {
 // Network-first for the shell (fresh when online), cache when offline. Never touch model calls.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
+  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.endsWith('.mp4')) return;
   e.respondWith(
     fetch(e.request)
       .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return res; })

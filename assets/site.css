@@ -202,3 +202,9 @@ code { font: .86em ui-monospace, 'SF Mono', Consolas, monospace; background: var
 .hero { padding-top: clamp(24px, 4vw, 48px); padding-bottom: 140px; }
 @media (max-height: 760px) and (min-width: 901px) { .phone { width: 220px; } }
 .hero .meadow { left: 50%; right: auto; width: 100vw; transform: translateX(-50%); }
+
+/* film */
+.film { padding-top: clamp(72px, 10vw, 120px); }
+.film-frame { max-width: 1000px; margin: 0 auto; border-radius: 22px; overflow: hidden; background: #0c0d0a; box-shadow: 0 40px 90px -40px rgba(31, 42, 31, .55); aspect-ratio: 16 / 9; }
+.film-frame video { width: 100%; height: 100%; display: block; }
+.film-note { text-align: center; color: var(--muted); font-size: .9rem; margin: 22px auto 0; max-width: 560px; }
