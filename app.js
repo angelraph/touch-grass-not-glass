@@ -118,7 +118,7 @@ async function checkHealth() {
   }
   pill.textContent = darkroom === 'local' ? settings.model : darkroom === 'online' ? 'online darkroom' : 'pocket mode';
   el.textContent = darkroom === 'online'
-    ? `${localMsg} Using the online darkroom: Gemma 3 hosted by Google writes your quests and develops your photos. Photos are sent for developing and not stored by this app.`
+    ? `${localMsg} Using the online darkroom: Gemma 4 hosted by Google writes your quests and develops your photos. Photos are sent for developing and not stored by this app.`
     : darkroom === 'local' ? localMsg : `${localMsg} You can still walk; quests come from the pocket deck.`;
   pill.classList.toggle('ok', !!darkroom);
   return darkroom;
@@ -142,9 +142,9 @@ $('loadRoll').onclick = async () => {
       quests = await ollama.writeQuests(settings.url, settings.model, ctx);
       author = settings.model;
     } else {
-      status.textContent = 'Gemma 3 is writing your quests in the online darkroom…';
+      status.textContent = 'Gemma 4 is writing your quests in the online darkroom…';
       quests = await ollama.writeQuestsOnline(ctx);
-      author = 'Gemma 3 (online darkroom)';
+      author = 'Gemma 4 (online darkroom)';
     }
   } catch (e) {
     if (e.message !== 'no model') console.warn('Quest model unavailable, using pocket deck', e);
@@ -358,7 +358,7 @@ async function develop(r, section, btn) {
     status.className = 'status loading';
     status.textContent = where === 'local'
       ? `Developing frame ${n + 1} of ${todo.length} with ${settings.model} on this computer. About 2 minutes each on a CPU.`
-      : `Developing frame ${n + 1} of ${todo.length} with Gemma 3 in the online darkroom…`;
+      : `Developing frame ${n + 1} of ${todo.length} with Gemma 4 in the online darkroom…`;
     try {
       const b64 = shot.image.split(',')[1];
       shot.verdict = where === 'local'

@@ -1,5 +1,5 @@
 // The online darkroom: the same Gemma 3 prompts the local app sends to Ollama,
-// sent to Gemma 3 hosted by Google (Gemini API). The API key stays on the server.
+// sent to Gemma 4 hosted by Google (Gemini API). The API key stays on the server.
 // Photos are passed straight through for developing and never stored here.
 import { questPrompt, developPrompt } from '../prompts.js';
 

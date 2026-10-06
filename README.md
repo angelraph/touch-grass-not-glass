@@ -18,7 +18,7 @@ Back home you develop the roll. Gemma looks at each photo, writes down what it a
 
 The app only keeps one number: how long the screen was off during your walk.
 
-You don't need to install anything to try it. If your computer doesn't run Gemma, the hosted site uses an online darkroom: the same Gemma 3 model and the same prompts, hosted by Google, through a small serverless function (api/gemma.js). If Gemma runs on your own computer, the app uses that instead and your photos never leave your devices.
+You don't need to install anything to try it. If your computer doesn't run Gemma, the hosted site uses an online darkroom: Gemma 4, the newest open Gemma, with the same prompts, hosted by Google, through a small serverless function (api/gemma.js). If Gemma runs on your own computer, the app uses that instead and your photos never leave your devices.
 
 ## Running it
 

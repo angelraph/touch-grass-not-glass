@@ -1,5 +1,5 @@
 // Cache the app shell so field mode works with zero signal.
-const CACHE = 'touch-grass-v10';
+const CACHE = 'touch-grass-v11';
 const SHELL = [
   './', 'index.html', 'app.html', 'docs.html', 'app.js', 'ollama.js', 'prompts.js', 'store.js', 'manifest.webmanifest',
   'assets/base.css', 'assets/app.css', 'assets/site.css', 'assets/site.js',

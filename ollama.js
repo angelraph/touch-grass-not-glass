@@ -1,6 +1,6 @@
 // Two darkrooms, same open model (Gemma 3), same prompts:
 // local  = Ollama on your own computer (private, the default when it's there)
-// online = Gemma 3 hosted by Google, reached through this site's api/gemma function
+// online = Gemma 4 hosted by Google, reached through this site's api/gemma function
 import { QUESTS_SCHEMA, VERDICT_SCHEMA, questPrompt, developPrompt } from './prompts.js';
 
 // ---------- local (Ollama) ----------
