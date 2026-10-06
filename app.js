@@ -53,7 +53,9 @@ const settings = {
 let roll = null;           // the roll currently being loaded, walked or developed
 let visibleSince = null;   // when the field screen last became visible
 let place = 'a city park';
-let modelReady = false;
+let modelReady = false;      // Gemma on this computer (Ollama)
+let darkroom = null;         // 'local' | 'online' | null
+const useOnline = () => { try { return localStorage.getItem('useOnline') !== '0'; } catch { return true; } };
 
 // ---------- helpers ----------
 
@@ -102,17 +104,24 @@ async function renderToday() {
 
 async function checkHealth() {
   const pill = $('modelPill'), el = $('ollamaHealth');
+  let localMsg;
   try {
     modelReady = await ollama.health(settings.url, settings.model);
-    pill.textContent = modelReady ? settings.model : 'model missing';
-    el.textContent = modelReady ? `● ${settings.model} is ready on this machine.` : `Ollama is running. Now run: ollama pull ${settings.model}`;
+    localMsg = modelReady ? `● ${settings.model} is ready on this computer. Everything stays on your devices.` : `Ollama is running. Now run: ollama pull ${settings.model}`;
   } catch {
     modelReady = false;
-    pill.textContent = 'pocket mode';
-    el.textContent = 'No local AI found. You can still walk; quests come from the pocket deck. Develop later on your computer.';
+    localMsg = 'No Gemma on this computer.';
   }
-  pill.classList.toggle('ok', modelReady);
-  return modelReady;
+  darkroom = modelReady ? 'local' : null;
+  if (!modelReady && useOnline()) {
+    try { if (await ollama.onlineHealth()) darkroom = 'online'; } catch {}
+  }
+  pill.textContent = darkroom === 'local' ? settings.model : darkroom === 'online' ? 'online darkroom' : 'pocket mode';
+  el.textContent = darkroom === 'online'
+    ? `${localMsg} Using the online darkroom: Gemma 3 hosted by Google writes your quests and develops your photos. Photos are sent for developing and not stored by this app.`
+    : darkroom === 'local' ? localMsg : `${localMsg} You can still walk; quests come from the pocket deck.`;
+  pill.classList.toggle('ok', !!darkroom);
+  return darkroom;
 }
 
 document.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => {
@@ -125,13 +134,18 @@ $('loadRoll').onclick = async () => {
   btn.disabled = true;
   let quests, author;
   try {
-    if (!modelReady) throw new Error('no model');
+    if (!darkroom) throw new Error('no model');
+    const ctx = { place, month: MONTHS[now.getMonth()], partOfDay: partOfDay(now.getHours()) };
     status.className = 'status loading';
-    status.textContent = `${settings.model} is writing your quests… about 30 seconds on a laptop.`;
-    quests = await ollama.writeQuests(settings.url, settings.model, {
-      place, month: MONTHS[now.getMonth()], partOfDay: partOfDay(now.getHours()),
-    });
-    author = settings.model;
+    if (darkroom === 'local') {
+      status.textContent = `${settings.model} is writing your quests on this computer, about 30 seconds on a laptop.`;
+      quests = await ollama.writeQuests(settings.url, settings.model, ctx);
+      author = settings.model;
+    } else {
+      status.textContent = 'Gemma 3 is writing your quests in the online darkroom…';
+      quests = await ollama.writeQuestsOnline(ctx);
+      author = 'Gemma 3 (online darkroom)';
+    }
   } catch (e) {
     if (e.message !== 'no model') console.warn('Quest model unavailable, using pocket deck', e);
     quests = pocketQuests(place);
@@ -267,7 +281,7 @@ function entryHtml(s, i) {
     ${v ? `<h3 class="entry-title">${esc(v.title)}</h3>
       <span class="stamp ${v.matches_quest ? '' : 'no'}">${v.matches_quest ? '✓ Found' : 'Not quite'}</span>
       <p class="entry-note">“${esc(v.field_note)}”</p>
-      <p class="entry-seen">Seen: ${esc(v.observation)}${v.species_guess && !/^n\/a$/i.test(v.species_guess) ? ` · ${esc(v.species_guess)}` : ''}</p>`
+      <p class="entry-seen">Seen: ${esc(v.observation)}${v.species_guess && !/^n\/a$/i.test(v.species_guess) ? ` · ${esc(v.species_guess)}` : ''}${v.where ? ` · developed ${esc(v.where)}` : ''}</p>`
       : `<h3 class="entry-title">Frame ${i + 1}</h3>`}
     <p class="entry-quest">Quest: ${esc(s.quest)}</p>
   </article>`;
@@ -298,7 +312,7 @@ async function renderJournal(focusId) {
       <div class="roll-actions">
         ${!r.endedAt ? '<button class="btn btn-primary" data-act="resume">Resume walk</button>' : ''}
         ${r.sample ? '<button class="btn btn-primary" data-act="replay">Replay development</button>' : ''}
-        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}</button><button class="btn btn-ghost" data-act="peek">Show photos</button>` : ''}
+        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}${darkroom === 'online' ? ' online' : ''}</button><button class="btn btn-ghost" data-act="peek">Show photos</button>` : ''}
         <button class="btn btn-ghost" data-act="export">Export</button>
         <button class="del" data-act="delete" aria-label="Delete roll">Delete</button>
       </div>
@@ -330,8 +344,9 @@ $('rollList').addEventListener('click', async e => {
 
 async function develop(r, section, btn) {
   const status = section.querySelector('[data-status]');
-  if (!(await checkHealth())) {
-    status.textContent = 'No Gemma on this device yet. Tap Show photos to see them now, or export the roll and develop it on a computer running Ollama (see Docs).';
+  const where = await checkHealth();
+  if (!where) {
+    status.textContent = 'No darkroom reachable right now. Tap Show photos to see them, or develop later on a computer running Ollama (see Docs).';
     return;
   }
   btn.disabled = true;
@@ -341,14 +356,21 @@ async function develop(r, section, btn) {
     el?.classList.add('developing');
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     status.className = 'status loading';
-    status.textContent = `Developing frame ${n + 1} of ${todo.length} with ${settings.model}, on this computer. About 2 minutes each on a CPU.`;
+    status.textContent = where === 'local'
+      ? `Developing frame ${n + 1} of ${todo.length} with ${settings.model} on this computer. About 2 minutes each on a CPU.`
+      : `Developing frame ${n + 1} of ${todo.length} with Gemma 3 in the online darkroom…`;
     try {
-      shot.verdict = await ollama.develop(settings.url, settings.model, shot.quest, shot.image.split(',')[1]);
+      const b64 = shot.image.split(',')[1];
+      shot.verdict = where === 'local'
+        ? { ...(await ollama.develop(settings.url, settings.model, shot.quest, b64)), where: 'on this computer' }
+        : { ...(await ollama.developOnline(shot.quest, b64)), where: 'in the online darkroom' };
       await saveRoll(r);
       if (el) el.outerHTML = entryHtml(shot, i);
     } catch (err) {
       el?.classList.remove('developing');
-      status.textContent = `Frame ${i + 1} failed: ${err.message}`;
+      status.className = 'status';
+      status.textContent = err instanceof ollama.Busy ? err.message : `Frame ${i + 1} failed: ${err.message}`;
+      if (err instanceof ollama.Busy) { btn.disabled = false; return; }
     }
   }
   if (r.shots.every(s => !s.image || s.verdict)) {
@@ -417,6 +439,8 @@ $('importRoll').onchange = async e => {
 
 // ---------- SETTINGS / NAV ----------
 
+$('useOnline').checked = useOnline();
+$('useOnline').onchange = e => { try { localStorage.setItem('useOnline', e.target.checked ? '1' : '0'); } catch {} checkHealth(); };
 $('ollamaUrl').onchange = e => { settings.url = e.target.value.replace(/\/$/, ''); checkHealth(); };
 $('model').onchange = e => { settings.model = e.target.value.trim(); checkHealth(); };
 

@@ -121,3 +121,6 @@ code { font: .86em ui-monospace, Consolas, monospace; background: var(--paper-2)
 .intro { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px 22px; margin-bottom: 16px; }
 .intro ol { margin: 10px 0 14px; padding-left: 20px; display: grid; gap: 8px; color: var(--ink-2); font-size: .95rem; line-height: 1.45; }
 .intro b { color: var(--ink); font-weight: 600; }
+
+.setting-group label.toggle { display: flex; gap: 10px; align-items: flex-start; font-size: .9rem; color: var(--ink); }
+.setting-group label.toggle input { width: auto; margin: 3px 0 0; }

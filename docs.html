@@ -33,6 +33,7 @@
         <li><a href="#quick-start">Quick start</a></li>
         <li><a href="#requirements">Requirements</a></li>
         <li><a href="#using">Using the camera</a></li>
+        <li><a href="#online">The online darkroom</a></li>
         <li><a href="#phone">Phone outside, computer at home</a></li>
         <li><a href="#models">Choosing a model</a></li>
         <li><a href="#privacy">Privacy &amp; data</a></li>
@@ -80,6 +81,17 @@ npm start</code></pre>
       <h3>Glass-free %</h3>
       <p>The share of your walk when the field screen was not showing, measured with the browser's Page Visibility API. This is the only metric the app keeps.</p>
 
+      <h2 id="online">The online darkroom</h2>
+      <p>Not everyone has Gemma on a computer, so the hosted site has a second darkroom. When the app can't find Gemma on your computer, it uses <b>Gemma 3 hosted by Google</b> instead: the same open model, with exactly the same prompts (they live in <code>prompts.js</code> and both darkrooms import them).</p>
+      <ul>
+        <li>The camera's top right pill tells you which darkroom you're using: your model name (local), <b>online darkroom</b>, or <b>pocket mode</b> (no AI reachable).</li>
+        <li>Each developed frame says where it was developed.</li>
+        <li>Photos sent to the online darkroom go to Google's Gemini API for developing. This app's server passes them straight through and stores nothing.</li>
+        <li>You can turn it off in <b>Settings → Use the online darkroom</b>. Then only your own computer develops photos.</li>
+      </ul>
+      <h3>Running your own online darkroom</h3>
+      <p>The darkroom is one serverless function, <code>api/gemma.js</code>. Deploy the repo to Vercel and set an environment variable <code>GEMMA_API_KEY</code> with a free key from <a href="https://aistudio.google.com/apikey" rel="noopener">Google AI Studio</a>. Optionally set <code>GEMMA_MODEL</code> (default <code>gemma-3-4b-it</code>, the same model the app runs locally).</p>
+
       <h2 id="phone">Phone outside, computer at home</h2>
       <p>The most natural setup: walk with your phone, develop on your laptop.</p>
       <ol>
@@ -113,8 +125,9 @@ $env:OLLAMA_ORIGINS="https://touch-grass-not-glass.vercel.app"; ollama serve</co
       <ul>
         <li>Rolls, including photos, are stored in your browser's IndexedDB on your device.</li>
         <li>Photos are resized to 768px on the device before they're stored.</li>
-        <li>When you develop, photos are sent only to the Ollama address in Settings, which is <code>localhost</code> by default.</li>
-        <li>There are no accounts, analytics, cookies or server. Clearing the site's data deletes everything.</li>
+        <li>With Gemma on your computer, photos are sent only to the Ollama address in Settings, which is <code>localhost</code> by default.</li>
+        <li>Without it, the online darkroom sends photos to Gemma 3 hosted by Google for developing. Nothing is stored by this app. Switch it off in Settings if you prefer.</li>
+        <li>There are no accounts, analytics or cookies. Your rolls live only on your device; clearing the site's data deletes everything.</li>
         <li>Location is never requested. Quests use only the month and time of day.</li>
       </ul>
 

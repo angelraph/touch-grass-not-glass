@@ -1,4 +1,9 @@
-// Thin client for a local Ollama server running an open-weight model (default: Gemma 3).
+// Two darkrooms, same open model (Gemma 3), same prompts:
+// local  = Ollama on your own computer (private, the default when it's there)
+// online = Gemma 3 hosted by Google, reached through this site's api/gemma function
+import { QUESTS_SCHEMA, VERDICT_SCHEMA, questPrompt, developPrompt } from './prompts.js';
+
+// ---------- local (Ollama) ----------
 
 export async function health(base, model) {
   const res = await fetch(`${base}/api/tags`);
@@ -21,48 +26,40 @@ async function chat(base, model, messages, schema, numPredict) {
   return JSON.parse(message.content);
 }
 
-const QUESTS_SCHEMA = {
-  type: 'object',
-  properties: { quests: { type: 'array', items: { type: 'string' }, minItems: 6, maxItems: 6 } },
-  required: ['quests'],
-};
-
-export async function writeQuests(base, model, { place, month, partOfDay }) {
-  const prompt = `You write field quests for a phone camera that only works outdoors.
-It is ${month}, in the ${partOfDay}. The walker is heading to ${place}.
-Write exactly 6 quests. Each quest:
-- is one sentence, at most 14 words, second person, present tense
-- asks them to FIND and PHOTOGRAPH one specific real thing that exists in ${place} in ${month}
-- rewards slow looking: textures, small living things, signs of the season, light, sounds made visible
-- is achievable in under 10 minutes of walking, safe, and leaves nature undisturbed
-Vary them: at least one plant, one animal or animal sign, one about light or sky, one about the season.`;
-  const { quests } = await chat(base, model, [{ role: 'user', content: prompt }], QUESTS_SCHEMA, 400);
+export async function writeQuests(base, model, ctx) {
+  const { quests } = await chat(base, model, [{ role: 'user', content: questPrompt(ctx) }], QUESTS_SCHEMA, 400);
   return quests.slice(0, 6).map(q => q.trim());
 }
 
-const VERDICT_SCHEMA = {
-  type: 'object',
-  properties: {
-    observation: { type: 'string' },
-    matches_quest: { type: 'boolean' },
-    confidence: { type: 'number' },
-    title: { type: 'string' },
-    field_note: { type: 'string' },
-    species_guess: { type: 'string' },
-  },
-  required: ['observation', 'matches_quest', 'confidence', 'title', 'field_note', 'species_guess'],
-};
-
-// The image is base64 JPEG without the data: prefix. Observation comes first so the
-// verdict is grounded in what the model actually saw.
+// The image is base64 JPEG without the data: prefix.
 export async function develop(base, model, quest, imageB64) {
-  const prompt = `You are a kind, observant naturalist developing a walker's film photo.
-Their quest was: "${quest}"
-1. observation: describe plainly what is in the photo (1 sentence).
-2. matches_quest: true only if the observation reasonably satisfies the quest. Be generous with effort, honest about mismatches.
-3. confidence: 0 to 1.
-4. title: a 2-5 word specimen label, like a museum card.
-5. field_note: 2 sentences in a warm field-journal voice, noting one detail worth looking for next time.
-6. species_guess: likely species or "n/a". Say "uncertain" rather than invent.`;
-  return chat(base, model, [{ role: 'user', content: prompt, images: [imageB64] }], VERDICT_SCHEMA, 260);
+  return chat(base, model, [{ role: 'user', content: developPrompt(quest), images: [imageB64] }], VERDICT_SCHEMA, 260);
+}
+
+// ---------- online darkroom ----------
+
+export class Busy extends Error {}
+
+async function online(body) {
+  const res = await fetch('api/gemma', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 429 || data.error === 'busy') throw new Busy('The online darkroom is busy. Try again in a minute.');
+  if (!res.ok) throw new Error(data.error || `Online darkroom answered ${res.status}`);
+  return data;
+}
+
+export async function onlineHealth() {
+  const res = await fetch('api/gemma', { cache: 'no-store' });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.configured ? data : null;
+}
+
+export async function writeQuestsOnline(ctx) {
+  const { quests } = await online({ task: 'quests', ...ctx });
+  return quests.slice(0, 6).map(q => q.trim());
+}
+
+export async function developOnline(quest, imageB64) {
+  return online({ task: 'develop', quest, image: imageB64 });
 }
