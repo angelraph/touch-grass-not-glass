@@ -388,6 +388,10 @@ async function openSample() {
 }
 $('openSample').onclick = openSample;
 
+// first-time guide, shown until dismissed
+try { if (!localStorage.getItem('introSeen')) $('intro').hidden = false; } catch {}
+$('introOk').onclick = () => { $('intro').hidden = true; try { localStorage.setItem('introSeen', '1'); } catch {} };
+
 function exportRoll(r) {
   const blob = new Blob([JSON.stringify(r)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -429,5 +433,7 @@ $('ollamaUrl').value = settings.url;
 $('model').value = settings.model;
 show('today');
 renderToday();
+if (location.hash === '#sample') openSample();
+addEventListener('hashchange', () => { if (location.hash === '#sample') openSample(); });
 checkHealth();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
