@@ -44,6 +44,14 @@ async function gemma(parts, maxTokens) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const configured = Boolean(process.env.GEMMA_API_KEY);
+  if (req.method === 'GET' && configured && /[?&]list=1/.test(req.url || '')) {
+    // Which Gemma models this key can reach (names only).
+    const r = await fetch(`${API}?pageSize=1000`, { headers: { 'x-goog-api-key': process.env.GEMMA_API_KEY } });
+    const data = await r.json();
+    const models = (data.models || []).map(m => ({ name: m.name.replace('models/', ''), methods: m.supportedGenerationMethods }))
+      .filter(m => /gemma/i.test(m.name));
+    return res.status(200).json({ models, error: data.error?.message });
+  }
   if (req.method === 'GET') return res.status(200).json({ configured, model: MODELS[0] });
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
   if (!configured) return res.status(503).json({ error: 'The online darkroom is not set up yet.' });
