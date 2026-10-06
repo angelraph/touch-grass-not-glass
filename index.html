@@ -3,94 +3,186 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0b09">
-  <meta name="description" content="A camera that only works outside. Open-weight AI loads a roll of field quests, the screen goes dark, and Gemma develops your roll at home, on your own machine.">
-  <title>Touch Grass, Not Glass</title>
-  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#f4efe6">
+  <title>Touch Grass, Not Glass: the camera that only works outside</title>
+  <meta name="description" content="Six small things to find. The screen goes dark. You go look. Back home, an open-weight AI on your own computer develops your roll into a field journal.">
+  <meta property="og:title" content="Touch Grass, Not Glass">
+  <meta property="og:description" content="The camera that only works outside. Open-weight Gemma develops your roll at home, on your own machine.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="assets/fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/base.css">
+  <link rel="stylesheet" href="assets/site.css">
 </head>
 <body>
-  <!-- HOME -->
-  <section id="home" class="view">
-    <header class="masthead">
-      <p class="kicker">a camera that only works outside</p>
-      <h1>Touch Grass,<br><em>Not Glass</em></h1>
-    </header>
+  <header class="nav">
+    <a class="logo" href="./" aria-label="Touch Grass, Not Glass home">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 24c0-4 0-7 0-10M16 20c-3-.6-5-2.6-5.6-5.8 3.2.5 5.1 2.4 5.6 5.8zM16 17c2.6-.6 4.4-2.4 5-5.2-2.8.4-4.6 2.3-5 5.2z" fill="var(--moss)"/></svg>
+      Touch Grass<span class="logo-tail">, <em>Not Glass</em></span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#journal">Journal</a>
+      <a href="#open">Why open</a>
+      <a href="#faq">FAQ</a>
+      <a href="docs.html">Docs</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="app.html">Open the camera</a>
+  </header>
 
-    <ol class="how">
-      <li><b>Load film.</b> You get 6 little things to find outside.</li>
-      <li><b>Screen goes dark.</b> One mission at a time. Phone in pocket. Go look.</li>
-      <li><b>Found it? Tap the gold button.</b> Snap. Next mission.</li>
-      <li><b>Back home, develop.</b> AI on your own computer checks each photo and writes your nature journal.</li>
-    </ol>
-
-    <div class="card">
-      <h2>Load a roll</h2>
-      <p class="muted">Gemma writes you six field quests for today's season and light. Then put the phone in your pocket.</p>
-      <label>Where are you heading?
-        <select id="place">
-          <option value="a city park">City park</option>
-          <option value="a forest trail">Forest trail</option>
-          <option value="a backyard or garden">Backyard / garden</option>
-          <option value="city streets">City streets</option>
-          <option value="a beach or riverbank">Beach / riverbank</option>
-        </select>
-      </label>
-      <button id="loadRoll" class="primary">Load film</button>
-      <p id="loadStatus" class="status" aria-live="polite"></p>
-    </div>
-
-    <div class="card">
-      <h2>Darkroom</h2>
-      <p class="muted">Rolls you've shot wait here until Gemma develops them on this machine.</p>
-      <ul id="rolls" class="rolls"></ul>
-      <div class="row">
-        <label class="btn ghost">Import roll<input id="importRoll" type="file" accept=".json,application/json" hidden></label>
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Open-source AI · Runs on your own machine</p>
+        <h1>The camera that<br>only works <em>outside.</em></h1>
+        <p class="lede">You get six small things to find. The screen goes dark. You go and look. When you're home, an open-weight AI on your own computer <strong>develops your roll</strong> into a field journal.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="app.html">Open the camera <span aria-hidden="true">→</span></a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="hero-note">No account. No cloud. No streaks. Your photos never leave your devices.</p>
       </div>
+
+      <div class="hero-art" aria-hidden="true">
+        <div class="phone">
+          <div class="phone-screen">
+            <span class="ph-count">frame 3 of 6</span>
+            <span class="ph-glyph">◇</span>
+            <p class="ph-quest">Find a leaf that something has already taken a bite out of.</p>
+            <p class="ph-hint">Listen first. Look slowly.</p>
+            <span class="ph-btn">I found it</span>
+          </div>
+        </div>
+        <figure class="hero-card">
+          <img src="assets/samples/1-maple.jpg" alt="">
+          <figcaption id="heroCap"><span class="stamp">Found</span><b>Frame 1 · maple leaf</b><i>Developed at home by Gemma 3</i></figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="metric-band">
+      <p>The only number we keep is <span class="metric">how long the screen was off.</span></p>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="how" class="section">
+      <header class="section-head">
+        <p class="eyebrow">How it works</p>
+        <h2>Like a film camera,<br>with a naturalist inside.</h2>
+        <p>The app has three stages. Each one shows you less screen than the one before.</p>
+      </header>
+
+      <ol class="stages">
+        <li class="stage">
+          <span class="stage-n">01 · At home</span>
+          <h3>Load the film</h3>
+          <p>Choose where you're going: a park, a trail, your garden. An open-weight model (Gemma 3) writes six <b>field quests</b> to suit the season, the time of day and the place.</p>
+          <p class="stage-eg">“Find a seed, cone or berry still on its plant.”</p>
+        </li>
+        <li class="stage stage-dark">
+          <span class="stage-n">02 · Outside</span>
+          <h3>The screen goes dark</h3>
+          <p>You see one quest at a time, and the app reads it aloud. There's no preview, feed or map. When you find the thing, tap <b>I found it</b>, take the photo and put the phone away. The next quest is waiting.</p>
+          <p class="stage-eg">Works with no signal at all.</p>
+        </li>
+        <li class="stage">
+          <span class="stage-n">03 · Back home</span>
+          <h3>Develop the roll</h3>
+          <p>On your computer, Gemma looks at each photo and writes down what it <i>actually</i> sees. Only then does it decide whether you found what you were looking for. Each frame becomes a page in your field journal.</p>
+          <p class="stage-eg">About two minutes per photo on a laptop. Put the kettle on.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- PRINCIPLES -->
+    <section class="section principles">
+      <header class="section-head">
+        <p class="eyebrow">Designed to be put away</p>
+        <h2>Every feature takes something away.</h2>
+      </header>
+      <div class="principle-grid">
+        <div><h3>No previews</h3><p>You don't check the shot on the trail, so you keep looking at the trail.</p></div>
+        <div><h3>No instant verdict</h3><p>You only find out at home whether you found it. Waiting is part of the fun.</p></div>
+        <div><h3>No streaks or likes</h3><p>Nothing to compete with and nothing to keep up. The trees don't care about your rank.</p></div>
+        <div><h3>One honest metric</h3><p><b>Glass-free %</b>: how much of your walk the screen was off.</p></div>
+      </div>
+    </section>
+
+    <!-- SAMPLE JOURNAL -->
+    <section id="journal" class="section">
+      <header class="section-head">
+        <p class="eyebrow">A developed roll</p>
+        <h2>What comes out of the darkroom.</h2>
+        <p>These are real notes, written by <b>Gemma 3 (4B)</b> on a laptop CPU with no GPU and no internet. Nothing was edited, including two mistakes. It titled frame 4 a <i>slug</i> but still counted it as the snail it was asked for, and it called a black red squirrel an Eastern Gray. Small models on a CPU aren't field guides. That's why the notes say what the model <i>saw</i>, and why open weights matter: you can swap in a bigger model or fine-tune one. <span class="small">Photos are CC-licensed samples; credits are at the bottom of the page.</span></p>
+      </header>
+      <div id="sampleRoll" class="sample-roll"><p class="muted">Loading the sample roll…</p></div>
+    </section>
+
+    <!-- WHY OPEN -->
+    <section id="open" class="section open">
+      <header class="section-head">
+        <p class="eyebrow">Why open-weight AI</p>
+        <h2>A closed API would break<br>everything this is about.</h2>
+      </header>
+      <div class="open-grid">
+        <div><span class="open-icon">⌁</span><h3>Works where the signal doesn't</h3><p>Trails and parks are where the signal drops. Field mode needs no network, and the darkroom only needs your own machine.</p></div>
+        <div><span class="open-icon">◎</span><h3>Your walks stay yours</h3><p>A roll of photos is a time-stamped map of where you go. With an open model, those photos never reach someone else's server. That's how the app is built, not just a policy.</p></div>
+        <div><span class="open-icon">○</span><h3>Free to run, forever</h3><p>No API key, no fee per photo, no subscription. A hand-me-down laptop can run the whole darkroom.</p></div>
+        <div><span class="open-icon">✎</span><h3>Yours to change</h3><p>Swap in another model with one setting, edit the prompts in a plain file, or fine-tune it on the plants where you live.</p></div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="section faq">
+      <header class="section-head">
+        <p class="eyebrow">FAQ</p>
+        <h2>Good questions.</h2>
+      </header>
+      <div class="faq-list">
+        <details><summary>What exactly do I do?</summary>
+          <p>Open the camera and tap <b>Load film</b> to get six things to find. Go outside. Each time you find one, tap <b>I found it</b> and take a photo. When you're home, open the roll on your computer and tap <b>Develop</b>. You'll get a field journal of what you found.</p></details>
+        <details><summary>Why can't I see if I got it right straight away?</summary>
+          <p>That's on purpose. If the app judged every photo on the spot, you'd stand on the trail staring at a loading spinner, which is the screen time we're trying to remove. Like film, you find out later, and the wait is part of the fun.</p></details>
+        <details><summary>Does it work without internet?</summary>
+          <p>Yes. After your first visit, the app is saved on your phone, so field mode works in airplane mode. Photos are stored on the device. Developing needs your computer with the model installed, but not the internet.</p></details>
+        <details><summary>Are my photos uploaded anywhere?</summary>
+          <p>No. Photos are saved in your browser's storage on your own device. When you develop a roll, the photos go only to the AI model running on your own computer. There are no accounts, no analytics and no server.</p></details>
+        <details><summary>What do I need on my computer?</summary>
+          <p><a href="https://ollama.com" rel="noopener">Ollama</a> (free) and the <code>gemma3:4b</code> model, about 3 GB. Any modern laptop works and no graphics card is needed; it's just slower on a CPU (about 2 minutes a photo). The <a href="docs.html#quick-start">quick start</a> takes about five minutes.</p></details>
+        <details><summary>I only have a phone. Can I still use it?</summary>
+          <p>Yes. You can load film and go on walks from your phone alone. If no AI is available, the app uses a built-in deck of seasonal quests. Your rolls stay on the phone until you can develop them on a computer, with <b>Export roll</b> on the phone and <b>Import roll</b> on the computer.</p></details>
+        <details><summary>What does "glass-free %" mean?</summary>
+          <p>The share of your walk when the app's screen was <i>not</i> showing. If you walk for 40 minutes and look at the quest for 2 minutes in total, you were 95% glass-free. Higher is better, and it's the only number we track.</p></details>
+        <details><summary>Can I use a different AI model?</summary>
+          <p>Yes. Any vision model in Ollama works: <code>gemma3:12b</code> on a stronger machine, <code>gemma3n</code> for something lighter, <code>llava</code>, and others. Change it in the app's settings. The prompts are in <code>ollama.js</code> if you want to change how it writes.</p></details>
+        <details><summary>Is it good for kids?</summary>
+          <p>It works really well for kids. The quests are short and ask for things that are safe to find, and they tell you to leave nature as you found it. There are no ads, accounts or social features. We'd still suggest an adult goes along.</p></details>
+        <details><summary>Is it free and open source?</summary>
+          <p>Yes, it's MIT licensed. The code is on <a href="https://github.com/angelraph/touch-grass-not-glass" rel="noopener">GitHub</a>. It was built for the DEV Hacktoberfest 2026 Open-Source AI Challenge.</p></details>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="final-cta">
+      <h2>The best part of this app<br>is the part where you're <em>not</em> using it.</h2>
+      <a class="btn btn-primary" href="app.html">Open the camera <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>
+      <a class="logo" href="./">Touch Grass, <em>Not Glass</em></a>
+      <p>Built with Gemma 3 and Ollama for the DEV Hacktoberfest 2026 Open-Source AI Challenge. MIT licensed.</p>
     </div>
+    <nav aria-label="Footer">
+      <a href="app.html">Camera</a>
+      <a href="docs.html">Docs</a>
+      <a href="https://github.com/angelraph/touch-grass-not-glass" rel="noopener">GitHub</a>
+    </nav>
+    <p class="credits">Sample photos (CC BY / BY-SA, via Wikimedia Commons): maple leaf by Wilfredor · oak by Dietmar Rabich · forest light by Malene Thyssen · slug by Holger Krisp · squirrel by Charles J. Sharp · autumn oak by Ermell.</p>
+  </footer>
 
-    <details class="card">
-      <summary>Settings</summary>
-      <label>Ollama URL <input id="ollamaUrl" type="url"></label>
-      <label>Model <input id="model" type="text"></label>
-      <p class="muted small">Any open-weight vision model in Ollama works: <code>gemma3:4b</code>, <code>gemma3:12b</code>, <code>gemma3n</code>, <code>llava</code>… Swap it, fine-tune it, it's yours.</p>
-      <p id="ollamaHealth" class="status"></p>
-    </details>
-
-    <footer class="foot muted small">Photos and location never leave your devices. No accounts, no cloud, no streaks.</footer>
-  </section>
-
-  <!-- FIELD -->
-  <section id="field" class="view field" hidden>
-    <p class="frame-count"><span id="frameNo">1</span> / <span id="frameTotal">6</span></p>
-    <p id="questText" class="quest"></p>
-    <p class="hint">Look up. Find it. Then shoot.</p>
-    <div class="field-actions">
-      <label class="shutter" aria-label="Take photo">
-        <input id="shutter" type="file" accept="image/*" capture="environment" hidden>
-      </label>
-      <button id="skip" class="ghost small">skip</button>
-    </div>
-    <button id="endRoll" class="ghost small end">finish roll</button>
-  </section>
-
-  <!-- DEVELOP / JOURNAL -->
-  <section id="journal" class="view" hidden>
-    <button id="back" class="ghost small">← home</button>
-    <header class="masthead small-mast">
-      <p class="kicker" id="rollMeta"></p>
-      <h1 id="rollTitle">Field journal</h1>
-      <p id="glassStat" class="glass-stat"></p>
-    </header>
-    <div class="row">
-      <button id="develop" class="primary">Develop roll</button>
-      <button id="exportRoll" class="ghost">Export roll</button>
-    </div>
-    <p id="devStatus" class="status" aria-live="polite"></p>
-    <ol id="specimens" class="specimens"></ol>
-  </section>
-
-  <script type="module" src="app.js"></script>
+  <script type="module" src="assets/site.js"></script>
 </body>
 </html>

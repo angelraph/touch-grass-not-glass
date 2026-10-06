@@ -1,13 +1,17 @@
 // Cache the app shell so field mode works with zero signal.
-const CACHE = 'touch-grass-v2';
-const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'ollama.js', 'store.js', 'manifest.webmanifest', 'icon.svg'];
+const CACHE = 'touch-grass-v3';
+const SHELL = [
+  './', 'index.html', 'app.html', 'docs.html', 'app.js', 'ollama.js', 'store.js', 'manifest.webmanifest', 'icon.svg',
+  'assets/base.css', 'assets/app.css', 'assets/site.css', 'assets/site.js',
+  'assets/fonts/fraunces.woff2', 'assets/fonts/fraunces-italic.woff2', 'assets/fonts/inter.woff2',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 // Network-first for the shell (fresh when online), cache when offline. Never touch model calls.

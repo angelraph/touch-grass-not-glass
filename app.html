@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f4efe6">
+  <title>Camera · Touch Grass, Not Glass</title>
+  <meta name="description" content="The camera that only works outside.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/base.css">
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+<div class="app">
+
+  <!-- TODAY -->
+  <section id="today" class="view">
+    <header class="topbar">
+      <a class="logo" href="./" aria-label="About Touch Grass">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 24c0-4 0-7 0-10M16 20c-3-.6-5-2.6-5.6-5.8 3.2.5 5.1 2.4 5.6 5.8zM16 17c2.6-.6 4.4-2.4 5-5.2-2.8.4-4.6 2.3-5 5.2z" fill="var(--moss)"/></svg>
+      </a>
+      <span id="modelPill" class="pill" title="Local AI status">checking…</span>
+    </header>
+
+    <p id="greeting" class="greeting">Good day.</p>
+    <div class="hero-stat">
+      <span id="awayMin" class="big-num">0</span>
+      <span class="big-label">min away<br>from the screen</span>
+    </div>
+    <p id="awaySub" class="sub">Your first walk is waiting.</p>
+
+    <div class="roll-card">
+      <p class="eyebrow">Today's roll</p>
+      <h2>Six small things<br>to find outside.</h2>
+      <p class="where-label">Where are you heading?</p>
+      <div class="chips" role="radiogroup" aria-label="Destination">
+        <button class="chip on" role="radio" aria-checked="true" data-place="a city park">Park</button>
+        <button class="chip" role="radio" aria-checked="false" data-place="a forest trail">Trail</button>
+        <button class="chip" role="radio" aria-checked="false" data-place="a backyard or garden">Garden</button>
+        <button class="chip" role="radio" aria-checked="false" data-place="city streets">Streets</button>
+        <button class="chip" role="radio" aria-checked="false" data-place="a beach or riverbank">Water</button>
+      </div>
+      <button id="loadRoll" class="btn btn-primary wide">Load film <span aria-hidden="true">→</span></button>
+      <p id="loadStatus" class="status" aria-live="polite"></p>
+    </div>
+
+    <div id="darkroomCard" class="darkroom-card" hidden>
+      <div>
+        <p class="eyebrow">In the darkroom</p>
+        <p id="darkroomText" class="darkroom-text"></p>
+      </div>
+      <button id="openDarkroom" class="btn btn-ghost btn-sm">Develop</button>
+    </div>
+  </section>
+
+  <!-- READY -->
+  <section id="ready" class="view view-dim" hidden>
+    <div class="center">
+      <span class="glyph" aria-hidden="true">◇</span>
+      <p class="eyebrow light">Film loaded</p>
+      <h2 class="ready-title">Six quests are waiting.<br>You'll see one at a time.</h2>
+      <p class="ready-sub">Read the quest, put the phone in your pocket, and look. Take it out again only when you've found it.</p>
+      <p id="readyAuthor" class="tiny"></p>
+      <button id="startWalk" class="btn btn-amber wide">Start walking</button>
+      <button id="cancelRoll" class="link">not now</button>
+    </div>
+  </section>
+
+  <!-- FIELD -->
+  <section id="field" class="view view-field" hidden>
+    <div class="frames" id="frameDots" aria-hidden="true"></div>
+    <div class="center">
+      <span class="glyph" aria-hidden="true">◇</span>
+      <p id="questText" class="quest"></p>
+      <p class="hint">Listen first. Look slowly.</p>
+      <label class="btn btn-found" id="foundBtn">
+        I found it
+        <input id="shutter" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <button id="skip" class="link">skip this one</button>
+    </div>
+    <p id="saved" class="saved" aria-live="polite"></p>
+    <button id="endRoll" class="link end">end walk</button>
+  </section>
+
+  <!-- DONE -->
+  <section id="done" class="view view-dim" hidden>
+    <div class="center">
+      <p class="eyebrow light">Walk complete</p>
+      <p class="done-num"><span id="doneMin">0</span><small>min outside</small></p>
+      <p id="doneGlass" class="done-glass"></p>
+      <p class="ready-sub">Your roll stays undeveloped until you're home. Open it on the computer running your AI and tap <b>Develop</b>.</p>
+      <button id="toJournal" class="btn btn-amber wide">Open the roll</button>
+    </div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section id="journal" class="view" hidden>
+    <header class="topbar">
+      <h1 class="page-title">My field journal</h1>
+    </header>
+    <div id="statRow" class="stat-row"></div>
+    <div id="rollList" class="roll-list"></div>
+    <label class="btn btn-ghost btn-sm import">Import a roll<input id="importRoll" type="file" accept=".json,application/json" hidden></label>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="settings" class="view" hidden>
+    <header class="topbar"><h1 class="page-title">Settings</h1></header>
+    <div class="setting-group">
+      <label>Local AI address<input id="ollamaUrl" type="url" inputmode="url" autocomplete="off"></label>
+      <label>Model<input id="model" type="text" autocomplete="off" spellcheck="false"></label>
+      <p id="ollamaHealth" class="status"></p>
+      <p class="help">Any open-weight vision model in Ollama works: <code>gemma3:4b</code>, <code>gemma3:12b</code>, <code>gemma3n</code>, <code>llava</code>. See the <a href="docs.html">docs</a> for setup.</p>
+    </div>
+    <div class="setting-group">
+      <p class="help">Everything lives on this device. Nothing is uploaded, ever.</p>
+      <a class="btn btn-ghost btn-sm" href="./">About this app</a>
+    </div>
+  </section>
+
+  <nav id="tabbar" class="tabbar" aria-label="App">
+    <button data-tab="today" class="on">Today</button>
+    <button data-tab="journal">Journal</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

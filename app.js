@@ -27,18 +27,24 @@ const settings = {
   set model(v) { localStorage.setItem('model', v); },
 };
 
-let roll = null;           // the roll currently in the field or on the journal page
-let visibleSince = null;   // timestamp when the field screen last became visible
+let roll = null;           // the roll currently being loaded, walked or developed
+let visibleSince = null;   // when the field screen last became visible
+let place = 'a city park';
+let modelReady = false;
 
+// ---------- helpers ----------
+
+const QUIET = new Set(['ready', 'field', 'done']);
 function show(view) {
-  for (const v of ['home', 'field', 'journal']) $(v).hidden = v !== view;
-  document.body.classList.toggle('in-field', view === 'field');
+  for (const v of ['today', 'ready', 'field', 'done', 'journal', 'settings']) $(v).hidden = v !== view;
+  document.body.classList.toggle('quiet', QUIET.has(view));
+  document.querySelector('meta[name=theme-color]').content = QUIET.has(view) ? '#0c0d0a' : '#f4efe6';
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.tab === view));
   window.scrollTo(0, 0);
 }
 
-function partOfDay(h) {
-  return h < 6 ? 'night' : h < 11 ? 'morning' : h < 14 ? 'midday' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night';
-}
+const partOfDay = h => h < 5 ? 'night' : h < 11 ? 'morning' : h < 14 ? 'midday' : h < 18 ? 'afternoon' : h < 21 ? 'evening' : 'night';
+const greeting = h => h < 5 ? 'Still up? The stars are outside.' : h < 12 ? 'Good morning.' : h < 18 ? 'Good afternoon.' : 'Good evening.';
 
 function shuffle(a) {
   const b = [...a];
@@ -46,92 +52,84 @@ function shuffle(a) {
   return b;
 }
 
-function fmtMin(ms) {
-  const s = Math.round(ms / 1000);
-  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
-}
+const walkMs = r => Math.max(0, (r.endedAt || Date.now()) - r.startedAt);
+const awayMs = r => Math.max(0, walkMs(r) - r.visibleMs);
+const minutes = ms => Math.round(ms / 60000);
+const glassFree = r => walkMs(r) ? Math.max(0, 100 - (r.visibleMs / walkMs(r)) * 100) : 100;
+const fmtDate = (t, opts = { weekday: 'short', month: 'short', day: 'numeric' }) => new Date(t).toLocaleDateString(undefined, opts);
+const placeName = p => ({ 'a city park': 'Park', 'a forest trail': 'Trail', 'a backyard or garden': 'Garden', 'city streets': 'Streets', 'a beach or riverbank': 'Water' })[p] || p;
 
-// ---------- HOME ----------
+// ---------- TODAY ----------
 
-async function renderRolls() {
-  const rolls = await listRolls();
-  const ul = $('rolls');
-  ul.innerHTML = rolls.length ? '' : '<li class="muted small">No rolls yet. Go outside first.</li>';
-  for (const r of rolls) {
-    const shot = r.shots.filter(s => s.image).length;
-    const state = !r.endedAt ? 'in camera' : r.developedAt ? 'developed' : 'undeveloped';
-    const li = document.createElement('li');
-    li.innerHTML = `<span>${new Date(r.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · ${r.place}<br><span class="tag">${shot} frames · ${state}</span></span>`;
-    const open = document.createElement('button');
-    open.textContent = r.endedAt ? 'open' : 'resume';
-    open.onclick = () => (r.endedAt ? openJournal(r.id) : resumeField(r.id));
-    const del = document.createElement('button');
-    del.textContent = '×';
-    del.className = 'ghost';
-    del.title = 'Delete roll';
-    del.onclick = async () => { if (confirm('Delete this roll and its photos?')) { await deleteRoll(r.id); renderRolls(); } };
-    const actions = document.createElement('span');
-    actions.append(open, ' ', del);
-    li.append(actions);
-    ul.append(li);
+async function renderToday() {
+  $('greeting').textContent = greeting(new Date().getHours());
+  const rolls = (await listRolls()).filter(r => r.endedAt);
+  const total = rolls.reduce((s, r) => s + awayMs(r), 0);
+  $('awayMin').textContent = minutes(total);
+  $('awaySub').textContent = rolls.length
+    ? `Across ${rolls.length} walk${rolls.length > 1 ? 's' : ''}. That's the only number we keep.`
+    : 'Your first walk is waiting.';
+  const waiting = rolls.filter(r => !r.developedAt && r.shots.some(s => s.image));
+  $('darkroomCard').hidden = !waiting.length;
+  if (waiting.length) {
+    const frames = waiting.reduce((s, r) => s + r.shots.filter(x => x.image && !x.verdict).length, 0);
+    $('darkroomText').textContent = `${waiting.length} roll${waiting.length > 1 ? 's' : ''}, ${frames} frame${frames === 1 ? '' : 's'} waiting to develop.`;
   }
 }
 
 async function checkHealth() {
-  const el = $('ollamaHealth');
+  const pill = $('modelPill'), el = $('ollamaHealth');
   try {
-    const ok = await ollama.health(settings.url, settings.model);
-    el.textContent = ok ? `● ${settings.model} ready on this machine` : `○ Ollama is up, but run: ollama pull ${settings.model}`;
-    return ok;
+    modelReady = await ollama.health(settings.url, settings.model);
+    pill.textContent = modelReady ? settings.model : 'model missing';
+    el.textContent = modelReady ? `● ${settings.model} is ready on this machine.` : `Ollama is running. Now run: ollama pull ${settings.model}`;
   } catch {
-    el.textContent = '○ No local model reachable. Field mode still works; develop later at home.';
-    return false;
+    modelReady = false;
+    pill.textContent = 'pocket mode';
+    el.textContent = 'No local AI found. You can still walk; quests come from the pocket deck. Develop later on your computer.';
   }
+  pill.classList.toggle('ok', modelReady);
+  return modelReady;
 }
 
+document.querySelectorAll('.chip').forEach(chip => chip.addEventListener('click', () => {
+  document.querySelectorAll('.chip').forEach(c => { c.classList.toggle('on', c === chip); c.setAttribute('aria-checked', c === chip); });
+  place = chip.dataset.place;
+}));
+
 $('loadRoll').onclick = async () => {
-  const btn = $('loadRoll'), status = $('loadStatus');
-  const place = $('place').value, now = new Date();
+  const btn = $('loadRoll'), status = $('loadStatus'), now = new Date();
   btn.disabled = true;
   let quests, author;
   try {
-    status.textContent = `Gemma is writing your roll for ${place}… (on a laptop CPU this takes ~30s)`;
+    if (!modelReady) throw new Error('no model');
+    status.className = 'status loading';
+    status.textContent = `${settings.model} is writing your quests… about 30 seconds on a laptop.`;
     quests = await ollama.writeQuests(settings.url, settings.model, {
       place, month: MONTHS[now.getMonth()], partOfDay: partOfDay(now.getHours()),
     });
     author = settings.model;
   } catch (e) {
-    console.warn('Quest model unavailable, using pocket deck', e);
+    if (e.message !== 'no model') console.warn('Quest model unavailable, using pocket deck', e);
     quests = shuffle(POCKET_DECK).slice(0, 6);
-    author = 'pocket deck';
+    author = 'the pocket deck';
   }
   roll = {
     id: crypto.randomUUID(), place, author, createdAt: Date.now(),
     shots: quests.map(quest => ({ quest })), frame: 0,
-    startedAt: Date.now(), endedAt: null, visibleMs: 0, developedAt: null,
+    startedAt: null, endedAt: null, visibleMs: 0, developedAt: null,
   };
   await saveRoll(roll);
   btn.disabled = false;
+  status.className = 'status';
   status.textContent = '';
-  enterField();
+  $('readyAuthor').textContent = `Quests written by ${author} for ${placeName(place).toLowerCase()}, ${MONTHS[now.getMonth()]} ${partOfDay(now.getHours())}.`;
+  show('ready');
 };
 
-$('importRoll').onchange = async e => {
-  const file = e.target.files[0];
-  if (!file) return;
-  try {
-    const r = JSON.parse(await file.text());
-    if (!r.id || !Array.isArray(r.shots)) throw new Error('not a roll');
-    await saveRoll(r);
-    openJournal(r.id);
-  } catch {
-    alert('That file is not a Touch Grass roll.');
-  }
-  e.target.value = '';
-};
-
-$('ollamaUrl').onchange = e => { settings.url = e.target.value.replace(/\/$/, ''); checkHealth(); };
-$('model').onchange = e => { settings.model = e.target.value.trim(); checkHealth(); };
+$('cancelRoll').onclick = async () => { await deleteRoll(roll.id); roll = null; show('today'); renderToday(); };
+$('startWalk').onclick = () => { roll.startedAt = Date.now(); saveRoll(roll); enterField(); };
+$('openDarkroom').onclick = () => openJournal();
 
 // ---------- FIELD ----------
 
@@ -139,7 +137,7 @@ function speak(text) {
   if (!('speechSynthesis' in window)) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.92;
+  u.rate = 0.9;
   speechSynthesis.speak(u);
 }
 
@@ -151,13 +149,14 @@ function enterField() {
 
 async function resumeField(id) {
   roll = await getRoll(id);
+  roll.startedAt ??= Date.now();
   enterField();
 }
 
 function showFrame() {
   const shot = roll.shots[roll.frame];
-  $('frameNo').textContent = roll.frame + 1;
-  $('frameTotal').textContent = roll.shots.length;
+  $('frameDots').innerHTML = roll.shots.map((s, i) =>
+    `<span class="${i < roll.frame ? 'done' : i === roll.frame ? 'now' : ''}"></span>`).join('');
   $('questText').textContent = shot.quest;
   speak(shot.quest);
 }
@@ -191,11 +190,20 @@ function toJpeg(file, max = 768) {
   });
 }
 
-async function advance() {
+function flash(text) {
+  const el = $('saved');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(flash.t);
+  flash.t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+async function advance(msg) {
   roll.frame++;
   tallyVisible();
   if (roll.frame >= roll.shots.length) return finishRoll();
   await saveRoll(roll);
+  flash(msg);
   showFrame();
 }
 
@@ -207,114 +215,164 @@ $('shutter').onchange = async e => {
   shot.image = await toJpeg(file);
   shot.takenAt = Date.now();
   if (navigator.vibrate) navigator.vibrate(40);
-  advance();
+  advance(`Frame ${roll.frame + 1} is on the roll. Phone away.`);
 };
 
-$('skip').onclick = () => { roll.shots[roll.frame].skipped = true; advance(); };
+$('skip').onclick = () => { roll.shots[roll.frame].skipped = true; advance('Skipped. Next one.'); };
 $('endRoll').onclick = () => finishRoll();
 
 async function finishRoll() {
   tallyVisible();
   visibleSince = null;
-  speechSynthesis?.cancel();
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
   roll.endedAt = Date.now();
   await saveRoll(roll);
-  openJournal(roll.id);
+  $('doneMin').textContent = Math.max(1, minutes(walkMs(roll)));
+  $('doneGlass').textContent = `${glassFree(roll).toFixed(0)}% glass-free`;
+  show('done');
+}
+$('toJournal').onclick = () => openJournal(roll.id);
+
+// ---------- JOURNAL / DARKROOM ----------
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function entryHtml(s, i) {
+  const v = s.verdict;
+  return `<article class="entry ${v ? '' : 'undeveloped'}" data-i="${i}">
+    <img src="${s.image}" alt="${esc(v?.observation || 'Undeveloped frame')}">
+    ${v ? `<h3 class="entry-title">${esc(v.title)}</h3>
+      <span class="stamp ${v.matches_quest ? '' : 'no'}">${v.matches_quest ? '✓ Found' : 'Not quite'}</span>
+      <p class="entry-note">“${esc(v.field_note)}”</p>
+      <p class="entry-seen">Seen: ${esc(v.observation)}${v.species_guess && !/^n\/a$/i.test(v.species_guess) ? ` · ${esc(v.species_guess)}` : ''}</p>`
+      : `<h3 class="entry-title">Frame ${i + 1}</h3>`}
+    <p class="entry-quest">Quest: ${esc(s.quest)}</p>
+  </article>`;
 }
 
-// ---------- DARKROOM / JOURNAL ----------
-
-function glassLine(r) {
-  const walk = (r.endedAt || Date.now()) - r.startedAt;
-  const pct = walk ? Math.max(0, 100 - (r.visibleMs / walk) * 100) : 100;
-  return `walk ${fmtMin(walk)} · screen ${fmtMin(r.visibleMs)} · ${pct.toFixed(0)}% glass-free`;
+async function renderJournal(focusId) {
+  const rolls = (await listRolls()).filter(r => r.startedAt);
+  const walked = rolls.filter(r => r.endedAt);
+  $('statRow').innerHTML = walked.length
+    ? walked.slice(0, 12).map(r => `<div><b>${Math.max(1, minutes(walkMs(r)))}</b><span>min · ${fmtDate(r.createdAt, { month: 'short', day: 'numeric' })}</span></div>`).join('')
+    : '';
+  const list = $('rollList');
+  if (!rolls.length) {
+    list.innerHTML = '<div class="empty"><b>Nothing here yet.</b>Your journal fills up after your first walk.</div>';
+    return;
+  }
+  list.innerHTML = rolls.map(r => {
+    const shots = r.shots.map((s, i) => [s, i]).filter(([s]) => s.image);
+    const pending = shots.filter(([s]) => !s.verdict).length;
+    const meta = r.endedAt
+      ? `${Math.max(1, minutes(walkMs(r)))} min outside · ${glassFree(r).toFixed(0)}% glass-free · ${shots.length} frame${shots.length === 1 ? '' : 's'}`
+      : 'Walk in progress';
+    return `<section class="roll" data-id="${r.id}">
+      <div class="roll-head"><span class="roll-date">${fmtDate(r.createdAt)}</span></div>
+      <h2 class="roll-place">${esc(placeName(r.place))} roll</h2>
+      <p class="roll-meta">${meta}</p>
+      <div class="roll-actions">
+        ${!r.endedAt ? '<button class="btn btn-primary" data-act="resume">Resume walk</button>' : ''}
+        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}</button>` : ''}
+        <button class="btn btn-ghost" data-act="export">Export</button>
+        <button class="del" data-act="delete" aria-label="Delete roll">Delete</button>
+      </div>
+      <p class="status" data-status></p>
+      ${shots.map(([s, i]) => entryHtml(s, i)).join('')}
+    </section>`;
+  }).join('');
+  if (focusId) list.querySelector(`[data-id="${focusId}"]`)?.scrollIntoView({ block: 'start' });
 }
 
-function renderSpecimens() {
-  const ol = $('specimens');
-  ol.innerHTML = '';
-  roll.shots.forEach((s, i) => {
-    if (!s.image) return;
-    const li = document.createElement('li');
-    li.className = 'specimen' + (s.verdict ? '' : ' undeveloped');
-    li.dataset.i = i;
-    const v = s.verdict;
-    li.innerHTML = `
-      <img alt="">
-      <h3></h3>
-      <p class="muted small quest-line"></p>
-      ${v ? `<span class="stamp ${v.matches_quest ? 'yes' : 'no'}">${v.matches_quest ? 'found' : 'not quite'}</span>` : ''}
-      <p class="note"></p>
-      <p class="guess"></p>`;
-    li.querySelector('img').src = s.image;
-    li.querySelector('h3').textContent = v ? v.title : `Frame ${i + 1}`;
-    li.querySelector('.quest-line').textContent = `Quest: ${s.quest}`;
-    if (v) {
-      li.querySelector('.note').textContent = v.field_note;
-      li.querySelector('.guess').textContent =
-        `${v.observation}${v.species_guess && v.species_guess !== 'n/a' ? ` · species: ${v.species_guess}` : ''}`;
-    }
-    ol.append(li);
-  });
-  if (!ol.children.length) ol.innerHTML = '<li class="muted">No frames on this roll.</li>';
-}
-
-async function openJournal(id) {
-  roll = await getRoll(id);
+async function openJournal(focusId) {
   show('journal');
-  const d = new Date(roll.createdAt);
-  $('rollMeta').textContent = `${d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })} · ${roll.place} · quests by ${roll.author}`;
-  $('rollTitle').textContent = roll.developedAt ? 'Field journal' : 'Undeveloped roll';
-  $('glassStat').textContent = glassLine(roll);
-  $('develop').hidden = !!roll.developedAt;
-  $('devStatus').textContent = '';
-  renderSpecimens();
+  await renderJournal(focusId);
 }
 
-$('develop').onclick = async () => {
-  const btn = $('develop'), status = $('devStatus');
+$('rollList').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-act]');
+  if (!btn) return;
+  const section = btn.closest('.roll');
+  const r = await getRoll(section.dataset.id);
+  const act = btn.dataset.act;
+  if (act === 'resume') { roll = r; resumeField(r.id); }
+  if (act === 'export') exportRoll(r);
+  if (act === 'delete' && confirm('Delete this roll and its photos?')) { await deleteRoll(r.id); renderJournal(); }
+  if (act === 'develop') develop(r, section, btn);
+});
+
+async function develop(r, section, btn) {
+  const status = section.querySelector('[data-status]');
   if (!(await checkHealth())) {
-    status.textContent = `No model reachable at ${settings.url}. Develop this roll on the machine running Ollama (Export → Import).`;
+    status.textContent = `No local AI at ${settings.url}. Develop this roll on the computer running Ollama: Export here, Import there.`;
     return;
   }
   btn.disabled = true;
-  const todo = roll.shots.map((s, i) => [s, i]).filter(([s]) => s.image && !s.verdict);
+  const todo = r.shots.map((s, i) => [s, i]).filter(([s]) => s.image && !s.verdict);
   for (const [n, [shot, i]] of todo.entries()) {
-    const li = document.querySelector(`.specimen[data-i="${i}"]`);
-    li?.classList.add('developing');
-    li?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    status.textContent = `Developing frame ${n + 1} of ${todo.length} with ${settings.model}, locally. On a laptop CPU that's a couple of minutes a frame: put the kettle on.`;
+    const el = section.querySelector(`.entry[data-i="${i}"]`);
+    el?.classList.add('developing');
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    status.className = 'status loading';
+    status.textContent = `Developing frame ${n + 1} of ${todo.length} with ${settings.model}, on this computer. About 2 minutes each on a CPU.`;
     try {
       shot.verdict = await ollama.develop(settings.url, settings.model, shot.quest, shot.image.split(',')[1]);
-      await saveRoll(roll);
-    } catch (e) {
-      status.textContent = `Frame ${i + 1} failed: ${e.message}`;
+      await saveRoll(r);
+      if (el) el.outerHTML = entryHtml(shot, i);
+    } catch (err) {
+      el?.classList.remove('developing');
+      status.textContent = `Frame ${i + 1} failed: ${err.message}`;
     }
-    renderSpecimens();
   }
-  if (roll.shots.every(s => !s.image || s.verdict)) {
-    roll.developedAt = Date.now();
-    await saveRoll(roll);
+  if (r.shots.every(s => !s.image || s.verdict)) {
+    r.developedAt = Date.now();
+    await saveRoll(r);
   }
-  btn.disabled = false;
-  openJournal(roll.id);
-};
+  status.className = 'status';
+  status.textContent = '';
+  btn.remove();
+}
 
-$('exportRoll').onclick = () => {
-  const blob = new Blob([JSON.stringify(roll)], { type: 'application/json' });
+function exportRoll(r) {
+  const blob = new Blob([JSON.stringify(r)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `roll-${new Date(roll.createdAt).toISOString().slice(0, 10)}-${roll.id.slice(0, 4)}.json`;
+  a.download = `roll-${new Date(r.createdAt).toISOString().slice(0, 10)}-${r.id.slice(0, 4)}.json`;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+$('importRoll').onchange = async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  try {
+    const r = JSON.parse(await file.text());
+    if (!r.id || !Array.isArray(r.shots)) throw new Error('not a roll');
+    await saveRoll(r);
+    openJournal(r.id);
+  } catch {
+    alert('That file is not a Touch Grass roll.');
+  }
 };
 
-$('back').onclick = () => { show('home'); renderRolls(); };
+// ---------- SETTINGS / NAV ----------
+
+$('ollamaUrl').onchange = e => { settings.url = e.target.value.replace(/\/$/, ''); checkHealth(); };
+$('model').onchange = e => { settings.model = e.target.value.trim(); checkHealth(); };
+
+document.querySelectorAll('.tabbar button').forEach(b => b.addEventListener('click', () => {
+  const tab = b.dataset.tab;
+  if (tab === 'journal') return openJournal();
+  show(tab);
+  if (tab === 'today') renderToday();
+}));
 
 // ---------- BOOT ----------
 
 $('ollamaUrl').value = settings.url;
 $('model').value = settings.model;
-renderRolls();
+show('today');
+renderToday();
 checkHealth();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
