@@ -86,7 +86,7 @@ const placeName = p => ({ 'a city park': 'Park', 'a forest trail': 'Trail', 'a b
 
 async function renderToday() {
   $('greeting').textContent = greeting(new Date().getHours());
-  const rolls = (await listRolls()).filter(r => r.endedAt);
+  const rolls = (await listRolls()).filter(r => r.endedAt && !r.sample);
   const total = rolls.reduce((s, r) => s + awayMs(r), 0);
   $('awayMin').textContent = minutes(total);
   $('awaySub').textContent = rolls.length
@@ -275,7 +275,7 @@ function entryHtml(s, i) {
 
 async function renderJournal(focusId) {
   const rolls = (await listRolls()).filter(r => r.startedAt);
-  const walked = rolls.filter(r => r.endedAt);
+  const walked = rolls.filter(r => r.endedAt && !r.sample);
   $('statRow').innerHTML = walked.length
     ? walked.slice(0, 12).map(r => `<div><b>${Math.max(1, minutes(walkMs(r)))}</b><span>min · ${fmtDate(r.createdAt, { month: 'short', day: 'numeric' })}</span></div>`).join('')
     : '';
@@ -294,9 +294,11 @@ async function renderJournal(focusId) {
       <div class="roll-head"><span class="roll-date">${fmtDate(r.createdAt)}</span></div>
       <h2 class="roll-place">${esc(placeName(r.place))} roll</h2>
       <p class="roll-meta">${meta}</p>
+      ${r.sample ? '<p class="sample-note">A real walk on my street, developed by Gemma 3 on my laptop. Tap Replay to watch the darkroom work, using its real output.</p>' : ''}
       <div class="roll-actions">
         ${!r.endedAt ? '<button class="btn btn-primary" data-act="resume">Resume walk</button>' : ''}
-        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}</button>` : ''}
+        ${r.sample ? '<button class="btn btn-primary" data-act="replay">Replay development</button>' : ''}
+        ${r.endedAt && pending ? `<button class="btn btn-primary" data-act="develop">Develop ${pending} frame${pending === 1 ? '' : 's'}</button><button class="btn btn-ghost" data-act="peek">Show photos</button>` : ''}
         <button class="btn btn-ghost" data-act="export">Export</button>
         <button class="del" data-act="delete" aria-label="Delete roll">Delete</button>
       </div>
@@ -322,12 +324,14 @@ $('rollList').addEventListener('click', async e => {
   if (act === 'export') exportRoll(r);
   if (act === 'delete' && confirm('Delete this roll and its photos?')) { await deleteRoll(r.id); renderJournal(); }
   if (act === 'develop') develop(r, section, btn);
+  if (act === 'peek') { const on = section.classList.toggle('peek'); btn.textContent = on ? 'Hide photos' : 'Show photos'; }
+  if (act === 'replay') replay(r, section, btn);
 });
 
 async function develop(r, section, btn) {
   const status = section.querySelector('[data-status]');
   if (!(await checkHealth())) {
-    status.textContent = `No local AI at ${settings.url}. Develop this roll on the computer running Ollama: Export here, Import there.`;
+    status.textContent = 'No Gemma on this device yet. Tap Show photos to see them now, or export the roll and develop it on a computer running Ollama (see Docs).';
     return;
   }
   btn.disabled = true;
@@ -355,6 +359,34 @@ async function develop(r, section, btn) {
   status.textContent = '';
   btn.remove();
 }
+
+async function replay(r, section, btn) {
+  const status = section.querySelector('[data-status]');
+  btn.disabled = true;
+  const shots = r.shots.map((s, i) => [s, i]).filter(([s]) => s.image);
+  for (const [s, i] of shots) section.querySelector(`.entry[data-i="${i}"]`).outerHTML = entryHtml({ ...s, verdict: null }, i);
+  for (const [n, [s, i]] of shots.entries()) {
+    const el = section.querySelector(`.entry[data-i="${i}"]`);
+    el.classList.add('developing');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    status.className = 'status loading';
+    status.textContent = `Replaying frame ${n + 1} of ${shots.length}. On my laptop this took about two minutes; here it's sped up.`;
+    await new Promise(res => setTimeout(res, 1900));
+    el.outerHTML = entryHtml(s, i);
+  }
+  status.className = 'status'; status.textContent = '';
+  btn.disabled = false;
+}
+
+async function openSample() {
+  const SAMPLE_ID = 'sample-walk-2026-10-06';
+  if (!(await getRoll(SAMPLE_ID))) {
+    try { await saveRoll(await (await fetch('assets/samples/walk-roll.json')).json()); }
+    catch { alert('Could not load the sample roll. Check your connection and try again.'); return; }
+  }
+  openJournal(SAMPLE_ID);
+}
+$('openSample').onclick = openSample;
 
 function exportRoll(r) {
   const blob = new Blob([JSON.stringify(r)], { type: 'application/json' });
