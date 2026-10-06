@@ -43,7 +43,8 @@ async function gemma(parts, maxTokens) {
     try {
       return { json: firstJson(answer), model: model.trim() };
     } catch {
-      throw new Error(`unreadable reply: ${answer.slice(-200)}`);
+      const c = data.candidates?.[0] || {};
+      throw new Error(`unreadable reply (${c.finishReason || 'no candidate'}, ${(c.content?.parts || []).length} parts, usage ${JSON.stringify(data.usageMetadata || {})}): ${answer.slice(-200)}`);
     }
   }
   throw last || new Error('no Gemma model available');
