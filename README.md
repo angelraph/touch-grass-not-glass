@@ -1,41 +1,48 @@
-# Touch Grass, Not Glass 🌿📷
+# Touch Grass, Not Glass 🌿
 
-**A camera that only works outside.** Open-weight AI loads a roll of field quests, the screen goes dark, and when you get home **Gemma develops your roll on your own machine**.
+**The camera that only works outside.** You get six small things to find. The screen goes dark. You go and look. When you're home, an open-weight AI on your own computer **develops your roll** into a field journal.
 
-Built for the [DEV Hacktoberfest Open-Source AI Challenge, Week 1: Touch Grass](https://dev.to/challenges/hacktoberfest-week1-2026-10-05).
+**Live:** https://touch-grass-not-glass.vercel.app · **Docs:** https://touch-grass-not-glass.vercel.app/docs.html
+
+Built for the [DEV Hacktoberfest 2026 Open-Source AI Challenge, Week 1: Touch Grass](https://dev.to/challenges/hacktoberfest-week1-2026-10-05).
 
 ## How it works
 
-1. **Load film (at home).** Gemma 3, running locally in [Ollama](https://ollama.com), writes six field quests for your month, time of day and destination ("Find a fallen maple leaf with vibrant red hues").
-2. **Field mode (outside).** The screen turns near-black. One quest, read aloud. One shutter button. No previews, no feed, no checking. Shoot, and the next quest appears. No signal needed: the app shell is cached by a service worker and photos sit in IndexedDB.
-3. **Darkroom (back home).** Hit *Develop roll*. Gemma's vision model looks at each photo, describes what it actually sees, decides whether you found it, and writes a specimen label and a two-line field note.
-4. **Field journal.** Your developed roll, plus the only stat the app keeps: **% glass-free**, the share of your walk the screen was off.
+| Stage | Where | What happens |
+| --- | --- | --- |
+| **Load the film** | at home | Gemma 3 (local, via [Ollama](https://ollama.com)) writes six field quests for the month, time of day and destination. |
+| **Field mode** | outside | The screen goes near-black. You see one quest, read aloud, and an *I found it* button. No preview, no feed. Works offline. |
+| **Develop** | back home | Gemma's vision model describes what each photo actually shows, *then* decides whether you found it, and writes a specimen title and field note. |
 
-## Run it
+The only metric is **glass-free %**: the share of your walk the screen was off.
+
+## Quick start
 
 ```bash
 ollama pull gemma3:4b
 npm start            # http://localhost:5173
 ```
 
-Zero npm dependencies. Any Ollama vision model works; change it in *Settings* (`gemma3:12b`, `gemma3n`, `llava`, …).
-
-**Phone in the field, PC at home:** open the app on your phone (HTTPS host such as GitHub Pages, or any LAN/HTTPS setup), shoot your roll, tap *Export roll*, then *Import roll* on the PC running Ollama and develop it there. Developing from the hosted page instead of `npm start`? Allow its origin in Ollama: `OLLAMA_ORIGINS=https://angelraph.github.io`. If no model is reachable when you load film, the app falls back to a built-in pocket deck of quests.
+Zero npm dependencies. No GPU needed (about 2 minutes per photo on a laptop CPU). The full setup, the phone-plus-computer workflow, model choices and troubleshooting are in the [docs](https://touch-grass-not-glass.vercel.app/docs.html).
 
 ## Why open models
 
-- **Offline by design:** field mode needs no network, and development needs no internet at all, only your machine.
-- **Private:** photos and location never leave devices you own.
+- **Offline by design:** field mode needs no network, and the darkroom only needs your own machine.
+- **Private:** photos never leave devices you own. No accounts, no analytics, no server.
 - **Free to run:** no API keys, no per-photo cost.
-- **Yours to change:** swap models, edit the prompts in `ollama.js`, fine-tune for your local flora.
+- **Yours to change:** swap models in Settings, edit the prompts in `ollama.js`, fine-tune for your local flora.
 
 ## Files
 
 | file | what |
 | --- | --- |
+| `index.html`, `docs.html` | landing page (with FAQ) and documentation |
+| `app.html`, `app.js` | the camera: Today, field mode, journal, settings |
 | `ollama.js` | quest writer + darkroom verifier (structured JSON output) |
-| `app.js` | home, field mode, journal, glass-free timer |
 | `store.js` | IndexedDB roll storage |
 | `sw.js` | offline app shell |
+| `assets/` | styles, self-hosted fonts (OFL), sample roll |
 
-MIT licensed.
+## Credits
+
+Sample photos (CC BY / BY-SA, Wikimedia Commons) by Wilfredor, Dietmar Rabich, Malene Thyssen, Holger Krisp, Charles J. Sharp and Ermell; see `assets/samples/CREDITS.txt`. Fonts: Fraunces and Inter (SIL OFL). Code: MIT.
