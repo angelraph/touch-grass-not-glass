@@ -32,8 +32,10 @@ async function gemma(parts, maxTokens) {
       body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: config }),
     });
     // Ask for JSON only; Gemma 4 thinks before it answers, so leave room for that.
-    let res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 3000, responseMimeType: 'application/json' });
-    if (res.status === 400) res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 3000 });
+    const base = { temperature: 0.8, responseMimeType: 'application/json' };
+    let res = await call({ ...base, maxOutputTokens: maxTokens + 2000, thinkingConfig: { thinkingBudget: 1024 } });
+    if (res.status === 400) res = await call({ ...base, maxOutputTokens: maxTokens + 8000 });
+    if (res.status === 400) res = await call({ temperature: 0.8, maxOutputTokens: maxTokens + 8000 });
     if (res.status === 429) { const e = new Error('busy'); e.status = 429; throw e; }
     if (res.status === 404) { last = new Error(`${model} not available`); continue; }
     const data = await res.json();
